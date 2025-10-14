@@ -3,8 +3,8 @@ services:
     name: hk-factory-invoice
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python app.py
     envVars:
       - key: FLASK_SECRET
         generateValue: true
@@ -12,6 +12,7 @@ services:
         value: HKGOF2025@
       - key: ORDER_DB
         value: /tmp/orders_test.db
+
 
 
    
