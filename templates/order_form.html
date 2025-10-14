@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Order #{{ order.id }} — {{ order.order_no }}</h2>
+<p class="small">Date: {{ order.order_date }} • Status: {{ order.status }}</p>
+
+<form method="post" class="card">
+  <input type="hidden" name="action" value="update-order">
+  <div class="grid">
+    <div><label>Order No</label><input name="order_no" value="{{ order.order_no }}" required></div>
+    {% if is_factory() %}
+    <div>
+      <label>Status</label>
+      <select name="status">
+        {% for s in statuses %}<option value="{{ s }}" {% if s==order.status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+    <div><label>Branch</label><input name="branch" value="{{ order.branch }}"></div>
+    {% else %}
+    <div><label>Status</label><input value="{{ order.status }}" readonly></div>
+    <div><label>Branch</label><input value="{{ order.branch }}" readonly></div>
+    {% endif %}
+    <div><label>Notes</label><input name="notes" value="{{ order.notes or '' }}"></div>
+  </div>
+  <div style="margin-top:10px">
+    <button class="icon-btn" title="Save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </button>
+    {% if not (not is_factory() and order.status != 'DRAFT') %}
+    <form method="post" action="/orders/{{ order.id }}" style="display:inline">
+      <input type="hidden" name="action" value="delete-order">
+      <button class="icon-btn" title="Delete" onclick="return confirm('Delete this order and all items?')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M8 6v-2h8v2"/><rect x="6" y="6" width="12" height="14" rx="1"/>
+        </svg>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</form>
+
+<h3>Add Item</h3>
+<form method="post" class="card">
+  <input type="hidden" name="action" value="add-item">
+  <div class="grid">
+    <div>
+      <label>Category</label>
+      <select name="category" required>
+        <option value="">—</option>
+        <option value="SHEILA">SHEILA</option>
+        <option value="ABAYA">ABAYA</option>
+      </select>
+    </div>
+
+    <div><label>Model #</label><input name="model_number"></div>
+    <div><label>Color</label><input name="color"></div>
+  </div>
+
+  <div class="grid">
+    <div><label>Sheila Fabric</label><input name="sheila_fabric"></div>
+    <div><label>Height</label><input name="height_cm"></div>
+    <div><label>Width</label><input name="width_cm"></div>
+    <div><label>Logo Color</label><input name="logo_color"></div>
+  </div>
+
+  <div class="grid">
+    <div><label>Abaya Fabric</label><input name="abaya_fabric"></div>
+    <div><label>Size</label><input name="size"></div>
+    <div><label>Upper Width</label><input name="upper_width_cm"></div>
+    <div><label>Lower Width</label><input name="lower_width_cm"></div>
+    <div><label>Sleeve Width</label><input name="sleeve_width_cm"></div>
+    <div><label>Sleeve Height</label><input name="sleeve_height_cm"></div>
+    <div><label>Logo</label><input name="logo"></div>
+  </div>
+
+  <div><label>Extra Note</label><input name="extra_note"></div>
+  <div style="margin-top:10px">
+    <button class="icon-btn" title="Add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+  </div>
+</form>
+
+<h3>Items</h3>
+<table class="table">
+  <tr><th>#</th><th>Category</th><th>Specs</th><th>Actions</th></tr>
+  {% for it in items %}
+  <tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ it.category }}</td>
+    <td>
+      {% if it.category=='SHEILA' %}
+        Model {{ it.model_number or '-' }}, Fabric {{ it.sheila_fabric or '-' }}, Color {{ it.color or '-' }}, H {{ it.height_cm or '-' }}, W {{ it.width_cm or '-' }}, Logo Color {{ it.logo_color or '-' }}
+      {% else %}
+        Model {{ it.model_number or '-' }}, Fabric {{ it.abaya_fabric or '-' }}, Color {{ it.color or '-' }}, Size {{ it.size or '-' }}, Upper {{ it.upper_width_cm or '-' }}, Lower {{ it.lower_width_cm or '-' }}, Sleeve W {{ it.sleeve_width_cm or '-' }}, Sleeve H {{ it.sleeve_height_cm or '-' }}, Logo {{ it.logo or '-' }}
+      {% endif %}
+    </td>
+    <td>
+      <form method="post" action="/orders/{{ order.id }}" style="display:inline">
+        <input type="hidden" name="action" value="delete-item">
+        <input type="hidden" name="item_id" value="{{ it.id }}">
+        <button class="icon-btn" title="Delete" onclick="return confirm('Delete this item?')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M8 6v-2h8v2"/><rect x="6" y="6" width="12" height="14" rx="1"/>
+          </svg>
+        </button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

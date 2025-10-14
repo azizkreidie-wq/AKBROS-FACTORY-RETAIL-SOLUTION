@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+  {% if not session.get('authed') %}
+  <div class="grid">
+    <a class="card" href="/login/factory">
+      <h3>Factory Login</h3>
+      <p>Full control of orders, invoices, branches.</p>
+    </a>
+    <a class="card" href="/login/retail">
+      <h3>Retail Login</h3>
+      <p>Select a branch slot, then enter passcode.</p>
+    </a>
+  </div>
+  {% else %}
+  <div class="grid">
+    <a class="card" href="/orders">
+      <h3>{{ t('home_orders') }}</h3>
+      <p>Manage factory orders and item specs.</p>
+    </a>
+    <a class="card" href="/invoices">
+      <h3>{{ t('home_invoices') }}</h3>
+      <p>Create invoices, track payments, sync custom items to factory.</p>
+    </a>
+    <a class="card" href="/settings/invoice">
+      <h3>Settings</h3>
+      <p>Per-branch invoice settings (logo/title/VAT/currency/template).</p>
+    </a>
+  </div>
+  {% endif %}
+{% endblock %}

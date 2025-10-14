@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Invoices</h2>
+
+<form method="post" class="card">
+  {% if not is_retail() %}
+    <label>Branch ID</label>
+    <input name="branch_id" type="number" min="1" max="50" value="1">
+  {% endif %}
+  <div style="margin-top:10px">
+    <button class="icon-btn" title="New Invoice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+  </div>
+</form>
+
+<table class="table">
+  <tr><th>ID</th><th>Invoice No</th><th>Branch</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Actions</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>{{ r.id }}</td>
+    <td>{{ r.invoice_no }}</td>
+    <td>{{ r.branch_name or r.branch_id }}</td>
+    <td>{{ r.status }}</td>
+    <td>{{ "%.2f"|format(r.subtotal or 0) }}</td>
+    <td>{{ "%.2f"|format(r.vat_amount or 0) }}</td>
+    <td>{{ "%.2f"|format(r.total or 0) }}</td>
+    <td>
+      <a class="icon-btn" href="/invoices/{{ r.id }}" title="Open">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 12h8M12 8v8"/><rect x="3" y="3" width="18" height="18" rx="2"/>
+        </svg>
+      </a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

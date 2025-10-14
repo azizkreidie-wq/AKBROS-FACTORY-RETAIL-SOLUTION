@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Branch #{{ slot_id }}</h2>
+<form method="post" class="card" style="max-width:520px">
+  {% if br.name %}
+    <p><b>Branch:</b> {{ br.name }}</p>
+  {% else %}
+    <label>Set Branch Name (once)</label>
+    <input name="branch_name" placeholder="e.g., Jeddah">
+  {% endif %}
+  <label>Branch Passcode</label>
+  <input type="password" name="passcode" placeholder="Required if set">
+  <div class="actions" style="margin-top:10px">
+    <button class="icon-btn" title="Enter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 12h14l-3-3m0 6 3-3"/><path d="M14 8v-3a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+      </svg>
+    </button>
+  </div>
+</form>
+{% endblock %}

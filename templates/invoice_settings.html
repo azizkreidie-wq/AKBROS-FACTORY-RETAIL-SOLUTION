@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Invoice Settings</h2>
+
+<form method="get" action="/settings/invoice" class="card" style="margin-bottom:12px">
+  {% if is_factory() %}
+    <div class="flex">
+      <div style="min-width:160px">
+        <label>Branch</label>
+        <select name="branch_id">
+          {% for s in branch_choices %}
+            <option value="{{ s.id }}" {% if s.id == branch_id %}selected{% endif %}>
+              #{{ s.id }} — {{ s.name or 'Not named' }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="align-self:end">
+        <button class="icon-btn" title="Switch Branch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M3.51 15a9 9 0 0 1 14.85-3.36L21 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  {% else %}
+    <p class="small">Branch: <b>{{ br.name or ('Branch ' ~ br.id) }}</b> (view-only)</p>
+  {% endif %}
+</form>
+
+<form method="post" class="card">
+  <div class="grid">
+    <div>
+      <label>Branch Name</label>
+      <input name="name" value="{{ br.name or '' }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+    <div>
+      <label>Branch Passcode</label>
+      <input name="passcode" value="{{ br.passcode or '' }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+    <div>
+      <label>Currency</label>
+      <input name="currency_code" value="{{ br.currency_code or 'AED' }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+    <div>
+      <label>VAT Mode</label>
+      <select name="vat_mode" {% if not is_factory() %}disabled{% endif %}>
+        <option value="included" {% if (br.vat_mode or '') == 'included' %}selected{% endif %}>Included</option>
+        <option value="excluded" {% if (br.vat_mode or '') == 'excluded' %}selected{% endif %}>Excluded</option>
+      </select>
+    </div>
+    <div>
+      <label>VAT Rate</label>
+      <input name="vat_rate" value="{{ br.vat_rate or 0 }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:8px">
+    <div>
+      <label>Invoice Title</label>
+      <input name="company_title" value="{{ br.company_title or 'Invoice' }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+    <div>
+      <label>Company Name</label>
+      <input name="company_name" value="{{ br.company_name or '' }}" {% if not is_factory() %}readonly{% endif %}>
+    </div>
+    <div>
+      <label>Template</label>
+      <select name="invoice_template" {% if not is_factory() %}disabled{% endif %}>
+        <option value="classic" {% if (br.invoice_template or '') == 'classic' %}selected{% endif %}>Classic</option>
+        <option value="modern"  {% if (br.invoice_template or '') == 'modern' %}selected{% endif %}>Modern</option>
+        <option value="minimal" {% if (br.invoice_template or '') == 'minimal' %}selected{% endif %}>Minimal</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="margin-top:8px">
+    <label>Company Address</label>
+    <textarea name="company_address" {% if not is_factory() %}readonly{% endif %}>{{ br.company_address or '' }}</textarea>
+  </div>
+
+  <div style="margin-top:10px">
+    {% if is_factory() %}
+      <button class="icon-btn" title="Save Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </button>
+    {% else %}
+      <span class="small">Read-only for Retail (contact Factory to update).</span>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

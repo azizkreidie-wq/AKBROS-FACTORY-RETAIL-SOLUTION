@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Select Branch Slot</h2>
+<div class="grid">
+  {% for s in slots %}
+  <a class="card" href="/retail/slot/{{ s.id }}">
+    <b>#{{ s.id }}</b><br>
+    {{ s.name or 'Not named yet' }}
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

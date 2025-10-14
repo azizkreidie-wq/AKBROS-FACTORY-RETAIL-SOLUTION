@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: hk-factory-invoice
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers=2 --threads=2 --timeout=120 --preload
+    envVars:
+      - key: FLASK_SECRET
+        generateValue: true
+      - key: ADMIN_PASSCODE
+        value: HKGOF2025@
+      - key: ORDER_DB
+        value: /var/data/orders_full.db
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
