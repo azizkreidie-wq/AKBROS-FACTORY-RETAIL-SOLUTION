@@ -1,129 +1,123 @@
 {% extends "base.html" %}
-{% block body %}
-<h2>Invoice #{{ inv.invoice_no }}</h2>
-<p class="small">Branch: {{ branch.name or inv.branch_id }} • Status: {{ inv.status }}</p>
+{% block content %}
 
-<form method="post" class="card">
-  <input type="hidden" name="action" value="header-save">
-  <div class="grid">
-    <div><label>Customer Name</label><input name="customer_name" value="{{ inv.customer_name or '' }}"></div>
-    <div><label>Customer Phone</label><input name="customer_phone" value="{{ inv.customer_phone or '' }}"></div>
-    <div><label>Title (override)</label><input name="title_override" value="{{ inv.title_override or '' }}"></div>
-  </div>
-  <div><label>Terms & Conditions</label><textarea name="terms">{{ inv.terms or '' }}</textarea></div>
-  <div style="margin-top:10px">
-    <button class="icon-btn" title="Save Header">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 6L9 17l-5-5"/>
-      </svg>
-    </button>
-  </div>
-</form>
-
-<h3>Add Item</h3>
-<form method="post" class="card">
-  <input type="hidden" name="action" value="add-item">
-  <div class="grid">
-    <div>
-      <label>Item Type</label>
-      <select name="item_type" required>
-        <option value="">—</option>
-        {% for it in item_types %}<option value="{{ it }}">{{ it }}</option>{% endfor %}
-      </select>
+{% if not inv %}
+  <h2>Create Invoice</h2>
+  <form method="post" action="{{ url_for('invoices.create_invoice') }}" class="card">
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
+      <div><label>Customer Name</label><input name="customer_name"></div>
+      <div><label>Customer Phone</label><input name="customer_phone"></div>
+      <div style="grid-column:1/-1"><label>Notes</label><input name="notes"></div>
     </div>
-    <div>
-      <label>Category</label>
-      <select name="category" required>
-        <option value="">—</option>
-        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
-      </select>
-    </div>
-    <div><label>Model #</label><input name="model_number"></div>
-    <div><label>Qty</label><input name="qty" value="1"></div>
-    <div><label>Unit Price</label><input name="unit_price" value="0"></div>
-  </div>
-
-  <div class="grid">
-    <div><label>Color</label><input name="color"></div>
-    <div><label>Sheila Fabric</label><input name="sheila_fabric"></div>
-    <div><label>Height</label><input name="height_cm"></div>
-    <div><label>Width</label><input name="width_cm"></div>
-    <div><label>Logo Color</label><input name="logo_color"></div>
-
-    <div><label>Abaya Fabric</label><input name="abaya_fabric"></div>
-    <div><label>Size</label><input name="size"></div>
-    <div><label>Upper Width</label><input name="upper_width_cm"></div>
-    <div><label>Lower Width</label><input name="lower_width_cm"></div>
-    <div><label>Sleeve Width</label><input name="sleeve_width_cm"></div>
-    <div><label>Sleeve Height</label><input name="sleeve_height_cm"></div>
-    <div><label>Logo</label><input name="logo"></div>
-  </div>
-
-  <div class="grid">
-    <div><label>Discount Amount</label><input name="discount_amount" value="0"></div>
-    <div><label>Discount %</label><input name="discount_percent" value="0"></div>
-  </div>
-
-  <div style="margin-top:10px">
-    <button class="icon-btn" title="Add Item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5v14M5 12h14"/>
-      </svg>
-    </button>
-  </div>
-</form>
-
-<h3>Items</h3>
-<table class="table">
-  <tr><th>#</th><th>Type</th><th>Category</th><th>Model</th><th>Qty</th><th>Unit</th><th>Line Total</th><th>Actions</th></tr>
-  {% for it in items %}
-  <tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ it.item_type }}</td>
-    <td>{{ it.category }}</td>
-    <td>{{ it.model_number or '-' }}</td>
-    <td>{{ it.qty }}</td>
-    <td>{{ it.unit_price }}</td>
-    <td>{{ "%.2f"|format(it.line_total or 0) }}</td>
-    <td>
-      <form method="post" style="display:inline">
-        <input type="hidden" name="action" value="delete-item">
-        <input type="hidden" name="iid" value="{{ it.id }}">
-        <button class="icon-btn" title="Delete" onclick="return confirm('Delete this item?')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"/><path d="M8 6v-2h8v2"/><rect x="6" y="6" width="12" height="14" rx="1"/>
-          </svg>
-        </button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-
-<h3>Totals</h3>
-<form method="post" class="card">
-  <input type="hidden" name="action" value="recalc">
-  <div class="grid">
-    <div><label>Discount Amount</label><input name="discount_amount" value="{{ inv.discount_amount or 0 }}"></div>
-    <div><label>Discount %</label><input name="discount_percent" value="{{ inv.discount_percent or 0 }}"></div>
-  </div>
-  <p class="small">Subtotal: {{ '%.2f'|format(inv.subtotal or 0) }} |
-    VAT: {{ '%.2f'|format(inv.vat_amount or 0) }} |
-    Total: {{ '%.2f'|format(inv.total or 0) }}</p>
-  <div style="margin-top:10px">
-    <button class="icon-btn" title="Recalculate">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M3.51 15a9 9 0 0 1 14.85-3.36L21 12"/>
-      </svg>
-    </button>
-    <form method="post" style="display:inline">
-      <input type="hidden" name="action" value="finalize">
-      <button class="icon-btn" title="Finalize">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 6L9 17l-5-5"/>
+    <div class="actions" style="margin-top:10px">
+      <button class="icon-btn" type="submit" title="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M12 5v14M5 12h14"></path>
         </svg>
       </button>
-    </form>
-  </div>
-</form>
+    </div>
+  </form>
+{% else %}
+  <h2>Invoice #{{ inv.id }}</h2>
+
+  <!-- Header info -->
+  <form method="post" class="card">
+    <input type="hidden" name="action" value="update-header">
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
+      <div><label>Customer Name</label><input name="customer_name" value="{{ inv.customer_name or '' }}"></div>
+      <div><label>Customer Phone</label><input name="customer_phone" value="{{ inv.customer_phone or '' }}"></div>
+      <div style="grid-column:1/-1"><label>Notes</label><input name="notes" value="{{ inv.notes or '' }}"></div>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button class="icon-btn" type="submit" title="Save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M5 12h14"></path>
+        </svg>
+      </button>
+    </div>
+  </form>
+
+  <!-- Add item -->
+  <form method="post" class="card">
+    <input type="hidden" name="action" value="add-item">
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px">
+      <div>
+        <label>Type</label>
+        <select name="item_type">
+          <option value="CUSTOM">Custom</option>
+          <option value="LOCAL_CUSTOM">Local Custom</option>
+          <option value="READY">Ready</option>
+        </select>
+      </div>
+      <div>
+        <label>Category</label>
+        <select name="category">
+          <option value="ABAYA">ABAYA</option>
+          <option value="SHEILA">SHEILA</option>
+        </select>
+      </div>
+      <div><label>Model</label><input name="model_number"></div>
+      <div><label>Color</label><input name="color"></div>
+      <div><label>Qty</label><input name="qty" value="1"></div>
+      <div><label>Unit Price</label><input name="unit_price" value="0"></div>
+
+      <div>
+        <label>Discount Type</label>
+        <select name="discount_type">
+          <option value="NONE">None</option>
+          <option value="AMOUNT">Amount</option>
+          <option value="PERCENT">Percent</option>
+        </select>
+      </div>
+      <div><label>Discount Value</label><input name="discount_value" value="0"></div>
+      <div><label>Tax %</label><input name="tax_rate" value="0"></div>
+
+      <div style="grid-column:1/-1"><label>Extra Note</label><input name="extra_note"></div>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button class="icon-btn" type="submit" title="Add Item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v8M8 12h8"></path>
+        </svg>
+      </button>
+    </div>
+  </form>
+
+  <!-- Items table -->
+  <table class="table">
+    <tr>
+      <th>#</th><th>Type</th><th>Category</th><th>Model</th><th>Color</th>
+      <th>Qty</th><th>Unit</th><th>Disc</th><th>Tax%</th><th>Total</th><th>Actions</th>
+    </tr>
+    {% for it in items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ it.item_type }}</td>
+      <td>{{ it.category }}</td>
+      <td>{{ it.model_number or '' }}</td>
+      <td>{{ it.color or '' }}</td>
+      <td>{{ it.qty }}</td>
+      <td>{{ "%.2f"|format(it.unit_price or 0) }}</td>
+      <td>{{ (it.discount_type or 'NONE') ~ ' ' ~ (it.discount_value or 0) }}</td>
+      <td>{{ it.tax_rate or 0 }}</td>
+      <td>{{ "%.2f"|format(it.line_total or 0) }}</td>
+      <td>
+        <form method="post" style="display:inline">
+          <input type="hidden" name="action" value="delete-item">
+          <input type="hidden" name="item_id" value="{{ it.id }}">
+          <button class="icon-btn" onclick="return confirm('Delete this item?')" title="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path d="M3 6h18"></path>
+              <path d="M8 6v-2h8v2"></path>
+              <rect x="6" y="6" width="12" height="14" rx="1"></rect>
+            </svg>
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endif %}
+
 {% endblock %}
