@@ -73,35 +73,101 @@ def invoice_edit(invoice_id):
             flash("Invoice header saved.")
             return redirect(url_for("invoices_bp.invoice_edit", invoice_id=invoice_id))
 
-        if act == "add-item":
-            item_type = request.form.get("item_type")
-            category = request.form.get("category")
-            if item_type not in ITEM_TYPES or category not in CATEGORIES:
-                flash("Select item type and category."); return redirect(url_for("invoices_bp.invoice_edit", invoice_id=invoice_id))
+        if action == "add-item":
+    from decimal import Decimal, InvalidOperation
+    f = request.form
 
-            model_number = request.form.get("model_number") or None
-            qty = float(request.form.get("qty") or 1)
-            unit_price = float(request.form.get("unit_price") or 0)
+    def as_int(val, default=1):
+        try: return int(str(val).strip())
+        except Exception: return default
 
-            db.execute("""
-                INSERT INTO invoice_items(invoice_id, item_type, category, model_number, color, sheila_fabric, height_cm, width_cm, logo_color,
-                                          abaya_fabric, size, upper_width_cm, lower_width_cm, sleeve_width_cm, sleeve_height_cm, logo,
-                                          qty, unit_price, discount_amount, discount_percent, line_total, sync_status)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 0, 'PENDING')
-            """, (invoice_id, item_type, category,
-                    model_number, request.form.get("color"),
-                    request.form.get("sheila_fabric"), request.form.get("height_cm"),
-                    request.form.get("width_cm"), request.form.get("logo_color"),
-                    request.form.get("abaya_fabric"), request.form.get("size"),
-                    request.form.get("upper_width_cm"), request.form.get("lower_width_cm"),
-                    request.form.get("sleeve_width_cm"), request.form.get("sleeve_height_cm"),
-                    request.form.get("logo"),
-                    qty, unit_price,
-                    float(request.form.get("discount_amount") or 0),
-                    float(request.form.get("discount_percent") or 0)))
-            db.commit()
-            flash("Item added.")
-            return redirect(url_for("invoices_bp.invoice_edit", invoice_id=invoice_id))
+    def as_money(val, default=0):
+        s = (val or "").strip().replace(",", "")
+        if s == "": return Decimal(default)
+        try: return Decimal(s)
+        except InvalidOperation: return Decimal(default)
+
+    invoice_id = as_int(f.get("invoice_id"), 0)
+    inv = db.execute("SELECT * FROM invoices WHERE id=?", (invoice_id,)).fetchone()
+    if not inv:
+        flash("Invoice not found.")
+        return redirect(url_for("invoice_list"))
+
+    item_type = (f.get("item_type") or "").strip().upper()
+    if item_type not in ("CUSTOM", "LOCAL_CUSTOM", "READY"):
+        item_type = "READY"
+
+    category = (f.get("category") or "").strip().upper()
+    if category not in ("ABAYA", "SHEILA"):
+        category = "ABAYA"
+
+    model_number = (f.get("model_number") or "").strip() or None
+    color        = (f.get("color") or "").strip() or None
+    extra_note   = (f.get("extra_note") or "").strip() or None
+
+    qty            = as_int(f.get("qty"), 1)
+    unit_price     = as_money(f.get("unit_price"), 0)
+    discount_type  = (f.get("discount_type") or "NONE").strip().upper()
+    if discount_type not in ("NONE", "AMOUNT", "PERCENT"):
+        discount_type = "NONE"
+    discount_value = as_money(f.get("discount_value"), 0)
+    tax_rate       = as_money(f.get("tax_rate"), 0)
+
+    # Optional category-specific fields (safe if absent)
+    sheila_fabric = (f.get("sheila_fabric") or "").strip() or None
+    height_cm     = (f.get("height_cm") or "").strip() or None
+    width_cm      = (f.get("width_cm") or "").strip() or None
+    logo_color    = (f.get("logo_color") or "").strip() or None
+
+    abaya_fabric     = (f.get("abaya_fabric") or "").strip() or None
+    size             = (f.get("size") or "").strip() or None
+    upper_width_cm   = (f.get("upper_width_cm") or "").strip() or None
+    lower_width_cm   = (f.get("lower_width_cm") or "").strip() or None
+    sleeve_width_cm  = (f.get("sleeve_width_cm") or "").strip() or None
+    sleeve_height_cm = (f.get("sleeve_height_cm") or "").strip() or None
+    logo             = (f.get("logo") or "").strip() or None
+
+    # Totals (safe)
+    line_subtotal = unit_price * qty
+    if discount_type == "AMOUNT":
+        after = max(Decimal("0"), line_subtotal - discount_value)
+    elif discount_type == "PERCENT":
+        pct = max(Decimal("0"), min(Decimal("100"), discount_value))
+        after = line_subtotal * (Decimal("1") - pct / Decimal("100"))
+    else:
+        after = line_subtotal
+    tax_amount = (after * (tax_rate / Decimal("100"))).quantize(Decimal("0.01"))
+    line_total = (after + tax_amount).quantize(Decimal("0.01"))
+
+    # Defensive migration (no-op if columns already exist)
+    for stmt in [
+        "ALTER TABLE invoice_items ADD COLUMN qty INTEGER DEFAULT 1",
+        "ALTER TABLE invoice_items ADD COLUMN unit_price REAL DEFAULT 0",
+        "ALTER TABLE invoice_items ADD COLUMN discount_type TEXT DEFAULT 'NONE'",
+        "ALTER TABLE invoice_items ADD COLUMN discount_value REAL DEFAULT 0",
+        "ALTER TABLE invoice_items ADD COLUMN tax_rate REAL DEFAULT 0",
+        "ALTER TABLE invoice_items ADD COLUMN line_total REAL DEFAULT 0",
+    ]:
+        try: db.execute(stmt)
+        except Exception: pass
+
+    db.execute("""
+      INSERT INTO invoice_items (
+        invoice_id, item_type, category, model_number, color, extra_note,
+        sheila_fabric, height_cm, width_cm, logo_color,
+        abaya_fabric, size, upper_width_cm, lower_width_cm, sleeve_width_cm, sleeve_height_cm, logo,
+        qty, unit_price, discount_type, discount_value, tax_rate, line_total
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (
+        invoice_id, item_type, category, model_number, color, extra_note,
+        sheila_fabric, height_cm, width_cm, logo_color,
+        abaya_fabric, size, upper_width_cm, lower_width_cm, sleeve_width_cm, sleeve_height_cm, logo,
+        int(qty), float(unit_price), discount_type, float(discount_value), float(tax_rate), float(line_total)
+    ))
+    db.commit()
+    flash("Item added to invoice.")
+    return redirect(url_for("invoice_detail", invoice_id=invoice_id))
+
 
         if act == "delete-item":
             iid = int(request.form.get("iid"))
