@@ -78,14 +78,19 @@ def invoice_edit(invoice_id):
     f = request.form
 
     def as_int(val, default=1):
-        try: return int(str(val).strip())
-        except Exception: return default
+        try:
+            return int(str(val).strip())
+        except Exception:
+            return default
 
     def as_money(val, default=0):
         s = (val or "").strip().replace(",", "")
-        if s == "": return Decimal(default)
-        try: return Decimal(s)
-        except InvalidOperation: return Decimal(default)
+        if s == "":
+            return Decimal(default)
+        try:
+            return Decimal(s)
+        except InvalidOperation:
+            return Decimal(default)
 
     invoice_id = as_int(f.get("invoice_id"), 0)
     inv = db.execute("SELECT * FROM invoices WHERE id=?", (invoice_id,)).fetchone()
@@ -113,7 +118,6 @@ def invoice_edit(invoice_id):
     discount_value = as_money(f.get("discount_value"), 0)
     tax_rate       = as_money(f.get("tax_rate"), 0)
 
-    # Optional category-specific fields (safe if absent)
     sheila_fabric = (f.get("sheila_fabric") or "").strip() or None
     height_cm     = (f.get("height_cm") or "").strip() or None
     width_cm      = (f.get("width_cm") or "").strip() or None
@@ -127,7 +131,6 @@ def invoice_edit(invoice_id):
     sleeve_height_cm = (f.get("sleeve_height_cm") or "").strip() or None
     logo             = (f.get("logo") or "").strip() or None
 
-    # Totals (safe)
     line_subtotal = unit_price * qty
     if discount_type == "AMOUNT":
         after = max(Decimal("0"), line_subtotal - discount_value)
@@ -139,7 +142,6 @@ def invoice_edit(invoice_id):
     tax_amount = (after * (tax_rate / Decimal("100"))).quantize(Decimal("0.01"))
     line_total = (after + tax_amount).quantize(Decimal("0.01"))
 
-    # Defensive migration (no-op if columns already exist)
     for stmt in [
         "ALTER TABLE invoice_items ADD COLUMN qty INTEGER DEFAULT 1",
         "ALTER TABLE invoice_items ADD COLUMN unit_price REAL DEFAULT 0",
@@ -148,8 +150,10 @@ def invoice_edit(invoice_id):
         "ALTER TABLE invoice_items ADD COLUMN tax_rate REAL DEFAULT 0",
         "ALTER TABLE invoice_items ADD COLUMN line_total REAL DEFAULT 0",
     ]:
-        try: db.execute(stmt)
-        except Exception: pass
+        try:
+            db.execute(stmt)
+        except Exception:
+            pass
 
     db.execute("""
       INSERT INTO invoice_items (
