@@ -10,8 +10,5 @@ services:
       - key: ADMIN_PASSCODE
         value: HKGOF2025@
       - key: ORDER_DB
-        value: /var/data/orders_full.db
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
+        value: /tmp/orders_test.db
+   
